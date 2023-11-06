@@ -39,6 +39,13 @@ async function run() {
            const result = await foodCollection.insertOne(newFood);
            res.send(result);
          });
+        
+         app.get("/food", async (req, res) => {
+           const cursor = foodCollection.find();
+             const result = await cursor.toArray();
+             result.sort((a, b) => b.foodquantity - a.foodquantity);
+           res.send(result);
+         });
 
     // Connect the client to the server	(optional starting in v4.7)
     // await client.connect();
