@@ -89,7 +89,17 @@ async function run() {
       res.send(result);
     });
 
- 
+    app.get("/manageFood/:email", async (req, res) => {
+      const email = req.params.email; // Get email from the URL parameter
+      const cursor = await foodCollection.find({ donoremail: email }); // Assuming there's a field 'email' in your foodCollection
+      const result = await cursor.toArray();
+
+      res.send(result);
+      
+    });
+
+   
+
     app.get("/foodDetails/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
