@@ -114,6 +114,32 @@ async function run() {
       res.send(result);
     });
 
+
+      app.put("/updateFood/:id", async (req, res) => {
+        const id = req.params.id;
+        const filter = { _id: new ObjectId(id) };
+        // const options = { upsert: true };
+        const updateFood = req.body;
+        const Food = {
+          $set: {
+           
+            foodname : updateFood.foodname,
+            foodquantity : updateFood.foodquantity,
+            pickuplocation : updateFood.pickuplocation,
+            expiredtime : updateFood.expiredtime,
+            image : updateFood.image,
+            status : updateFood.status,
+            notes : updateFood.notes,
+            donorphoto : updateFood.donorphoto,
+            donorname : updateFood.donorname,
+            donoremail : updateFood.donoremail,
+          },
+        };
+        const result = await foodCollection.updateOne(filter, Food);
+
+        res.send(result);
+      });
+
     //  app.get("/sortFood", async (req, res) => {
     //     // const value = req.params.value; // Get email from the URL parameter
     //     const cursor = await foodCollection.find(); // Assuming there's a field 'email' in your foodCollection
