@@ -98,7 +98,14 @@ async function run() {
       
     });
 
-   
+    app.get("/food/:searchFood", async (req, res) => {
+      const searchFood = req.params.searchFood; // Get email from the URL parameter
+      const cursor = await foodCollection.find({ foodname: searchFood }); // Assuming there's a field 'email' in your foodCollection
+      const result = await cursor.toArray();
+
+      res.send(result);
+      
+    });
 
     app.get("/foodDetails/:id", async (req, res) => {
       const id = req.params.id;
