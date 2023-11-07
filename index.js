@@ -30,6 +30,10 @@ async function run() {
       const foodCollection = client
         .db("foodShareDB")
         .collection("foodCollection)");
+      
+      const foodRequestCollection = client
+        .db("foodShareDB")
+        .collection("foodRequestCollection)");
 
 
 
@@ -39,6 +43,13 @@ async function run() {
            const result = await foodCollection.insertOne(newFood);
            res.send(result);
          });
+      
+        app.post("/requestFood", async (req, res) => {
+          const requestFood = req.body;
+          console.log(requestFood);
+          const result = await foodRequestCollection.insertOne(requestFood);
+          res.send(result);
+        });
         
          app.get("/food", async (req, res) => {
            const cursor = foodCollection.find();
