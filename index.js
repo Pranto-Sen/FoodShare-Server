@@ -1,9 +1,6 @@
 const express = require("express");
 const cors = require("cors");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
-// const jwt = require("jsonwebtoken");
-// const cookieParser = require("cookie-parser");
-// const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 require("dotenv").config();
 const app = express();
 const port = process.env.PORT || 5000;
@@ -58,32 +55,10 @@ async function run() {
       res.send(result);
     });
 
-    // app.post("/requestFood", async (req, res) => {
-    //   const requestFood = req.body;
-
-    //   try {
-    //     const filter = { _id: new ObjectId(req.body._id) };
-    //     const updateDocument = {
-    //       $set: { status: "Pending" },
-    //     };
-
-    //     // Update the 'status' field in the 'foodCollection' collection
-    //     await foodCollection.updateOne(filter, updateDocument);
-
-    //     // Remove the '_id' field from the request body to avoid duplicate key error
-    //     delete requestFood._id;
-
-    //     // Insert the modified request body into 'foodRequestCollection'
-    //     const result = await foodRequestCollection.insertOne(requestFood);
-    //     res.send(result);
-    //   } catch (error) {
-    //     console.error("Error:", error);
-    //     res.status(500).send("An error occurred while processing the request.");
-    //   }
-    // });
 
     app.get("/food", async (req, res) => {
-      const cursor = foodCollection.find({ status: 'Available' });
+      const cursor = foodCollection.find();
+      // const cursor = foodCollection.find({ status: 'Available' });
       const result = await cursor.toArray();
       result.sort((a, b) => b.foodquantity - a.foodquantity);
       res.send(result);
@@ -114,6 +89,43 @@ async function run() {
       res.send(result);
     });
 
+      app.get("/manage/:id", async (req, res) => {
+        const id = req.params.id;
+        const query = { foodId: id };
+        const result = await foodRequestCollection.findOne(query);
+        res.send(result);
+      });
+    
+     app.post("/status/:id", async (req, res) => {
+      //  const requestFood = req.body;
+       // console.log(req.body.foodname);
+       const id = req.params.id;
+       const filter = { foodId: id}; // Use ObjectID to match the MongoDB _id field
+
+       const updateDocument = {
+         $set: {
+           status: "Delivered",
+         },
+       };
+
+       const result = await foodRequestCollection.updateOne(
+         filter,
+         updateDocument
+       );
+      //  delete requestFood._id;
+      //  const result = await foodRequestCollection.insertOne(requestFood);
+       res.send(result);
+     });
+    
+     app.get("/foodRequest/:email", async (req, res) => {
+       const email = req.params.email; // Get email from the URL parameter
+       const cursor = await foodRequestCollection.find({
+         requesterEmail: email,
+       }); // Assuming there's a field 'email' in your foodCollection
+       const result = await cursor.toArray();
+
+       res.send(result);
+     });
 
       app.put("/updateFood/:id", async (req, res) => {
         const id = req.params.id;
@@ -139,48 +151,26 @@ async function run() {
 
         res.send(result);
       });
+    app.delete('/food/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) }
+      const result = await foodCollection.deleteOne(query)
+      res.send(result);
+    })
 
-    //  app.get("/sortFood", async (req, res) => {
-    //     // const value = req.params.value; // Get email from the URL parameter
-    //     const cursor = await foodCollection.find(); // Assuming there's a field 'email' in your foodCollection
-    //     const result = await cursor.toArray();
-    //      result.sort((a, b) => b.expiredtime - a.expiredtime);
-    //    res.send(result);
-    //  });
+      app.delete("/reqfood/:id", async (req, res) => {
+        const id = req.params.id;
+        const query = { _id: new ObjectId(id) };
+        const result = await foodRequestCollection.deleteOne(query);
+        res.send(result);
+      });
+   
 
-
-    //  app.get("/manageFood/", async (req, res) => {
-    //    const id = req.params.id;
-    //    const query = { _id: new ObjectId(id) };
-    //    const result = await foodCollection.findOne(query);
-    //    res.send(result);
-    //  });
-
-    // app.get("/manageFood/", async (req, res) => {
-    //   const userEmail = req.user.email; // Assuming you have the user's email from authentication
-    //   const id = req.params.id;
-    //   const query = { _id: new ObjectId(id), email: userEmail };
-    //   const result = await foodCollection.findOne(query);
-
-    //   if (result) {
-    //     res.send(result);
-    //   } else {
-    //     res
-    //       .status(404)
-    //       .send("Food not found for the user's email and provided ID.");
-    //   }
-    // });
-
-    // Connect the client to the server	(optional starting in v4.7)
-    // await client.connect();
-    // Send a ping to confirm a successful connection
-    // await client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
     );
   } finally {
-    // Ensures that the client will close when you finish/error
-    // await client.close();
+    
   }
 }
 run().catch(console.dir);
