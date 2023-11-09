@@ -1,25 +1,23 @@
 const express = require("express");
 const cors = require("cors");
-const jwt = require("jsonwebtoken");
-const cookieParser = require("cookie-parser");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 require("dotenv").config();
 const app = express();
 const port = process.env.PORT || 5000;
 
-// middleware
-
 app.use(express.json());
+// app.use(cors());
 
+const corsOptions = {
+  origin: "*",
+  credentials: true,
+  optionSuccessStatus: 200,
+};
 
-// console.log(process.env.DB_PASS);
+app.use(cors(corsOptions));
+
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.o9jgoh4.mongodb.net/?retryWrites=true&w=majority`;
 
-// middlewares 
-
-
-
-// Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
   serverApi: {
     version: ServerApiVersion.v1,
@@ -38,29 +36,6 @@ async function run() {
       .db("foodShareDB")
       .collection("foodRequestCollection)");
 
-    // auth related api
-    // app.post("/jwt", logger, async (req, res) => {
-    //   const user = req.body;
-    //   console.log("user for token", user);
-    //   const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
-    //     expiresIn: "1h",
-    //   });
-
-    //   res
-    //     .cookie("token", token, {
-    //       httpOnly: true,
-    //       secure: true,
-    //       sameSite: "none",
-    //     })
-    //     .send({ success: true });
-    // });
-
-      //  app.post("/logout", async (req, res) => {
-      //    const user = req.body;
-      //    console.log("logging out", user);
-      //    res.clearCookie("token", { maxAge: 0 }).send({ success: true });
-      //  });
-
     app.post("/addFood", async (req, res) => {
       const newFood = req.body;
       console.log(newFood);
@@ -70,15 +45,12 @@ async function run() {
 
     app.post("/requestFood", async (req, res) => {
       const requestFood = req.body;
-      // console.log(req.body.foodname);
-      const filter = { _id: new ObjectId(req.body._id) }; // Use ObjectID to match the MongoDB _id field
-
+      const filter = { _id: new ObjectId(req.body._id) };
       const updateDocument = {
         $set: {
           status: "Pending",
         },
       };
-
       await foodCollection.updateOne(filter, updateDocument);
       delete requestFood._id;
       const result = await foodRequestCollection.insertOne(requestFood);
@@ -87,38 +59,33 @@ async function run() {
 
     app.get("/food", async (req, res) => {
       const cursor = foodCollection.find();
-      // const cursor = foodCollection.find({ status: 'Available' });
       const result = await cursor.toArray();
       result.sort((a, b) => b.foodquantity - a.foodquantity);
       res.send(result);
     });
 
     app.get("/manageFood/:email", async (req, res) => {
-      const email = req.params.email; // Get email from the URL parameter
-      const cursor = await foodCollection.find({ donoremail: email }); // Assuming there's a field 'email' in your foodCollection
+      const email = req.params.email;
+      const cursor = await foodCollection.find({ donoremail: email });
       const result = await cursor.toArray();
-
       res.send(result);
     });
 
     // app.get("/food/:searchFood", async (req, res) => {
-    //   const searchFood = req.params.searchFood; // Get email from the URL parameter
-    //   const cursor = await foodCollection.find({ foodname: searchFood }); // Assuming there's a field 'email' in your foodCollection
+    //   const searchFood = req.params.searchFood;
+    //   const query = { foodname: { $regex: new RegExp(searchFood, "i") } };
+    //   const cursor = await foodCollection.find(query);
     //   const result = await cursor.toArray();
-
     //   res.send(result);
-
     // });
 
     app.get("/food/:searchFood", async (req, res) => {
-      const searchFood = req.params.searchFood; // Get food name from the URL parameter
-
-      // Create a case-insensitive regular expression for the food name
-      const query = { foodname: { $regex: new RegExp(searchFood, "i") } };
-
+      const searchFood = req.params.searchFood;
+      const query = {
+        foodname: { $regex: new RegExp(`\\b${searchFood}\\b`, "i") },
+      }; // Using \b for word boundary
       const cursor = await foodCollection.find(query);
       const result = await cursor.toArray();
-
       res.send(result);
     });
 
@@ -137,11 +104,8 @@ async function run() {
     });
 
     app.post("/status/:id", async (req, res) => {
-      //  const requestFood = req.body;
-      // console.log(req.body.foodname);
       const id = req.params.id;
-      const filter = { foodId: id }; // Use ObjectID to match the MongoDB _id field
-
+      const filter = { foodId: id };
       const updateDocument = {
         $set: {
           status: "Delivered",
@@ -152,29 +116,21 @@ async function run() {
         filter,
         updateDocument
       );
-      //  delete requestFood._id;
-      //  const result = await foodRequestCollection.insertOne(requestFood);
       res.send(result);
     });
 
     app.get("/foodRequest/:email", async (req, res) => {
-      // console.log('cookis', req.cookies);
-      const email = req.params.email; // Get email from the URL parameter
-      // if (req.user.email !== req.query.email) {
-      //    return res.status(403).send({ message: "forbidden access" });
-      // }
+      const email = req.params.email;
       const cursor = await foodRequestCollection.find({
         requesterEmail: email,
-      }); // Assuming there's a field 'email' in your foodCollection
+      });
       const result = await cursor.toArray();
-
       res.send(result);
     });
 
     app.put("/updateFood/:id", async (req, res) => {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) };
-      // const options = { upsert: true };
       const updateFood = req.body;
       const Food = {
         $set: {
@@ -212,7 +168,6 @@ async function run() {
       "Pinged your deployment. You successfully connected to MongoDB!"
     );
   } finally {
-    
   }
 }
 run().catch(console.dir);
